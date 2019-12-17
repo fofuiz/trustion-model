@@ -1,0 +1,48 @@
+#!/usr/bin/env groovy
+
+import groovy.transform.Field
+
+node {
+    CleanWork()
+    CheckoutProject()
+    OWASPDependencyCheck()
+    OWASPReportCheck()
+    MVNBuild()
+}
+
+def CleanWork(){
+    stage ("Clean Workspace") {
+        step([$class: 'WsCleanup'])
+    }
+}
+
+def OWASPDependencyCheck() {
+    stage ("OWASP Dependency Check") {
+        dependencyCheckAnalyzer datadir: '/var/lib/jenkins/OWASP-dependency-check', 
+        hintsFile: '', includeCsvReports: false, includeHtmlReports: false, includeJsonReports: false, 
+        includeVulnReports: false, isAutoupdateDisabled: true, outdir: '/var/lib/jenkins/workspace/trustion/HOM-trustion-model_BUILD',
+        scanpath: '/var/lib/jenkins/workspace/trustion/HOM-trustion-model_BUILD', skipOnScmChange: false, skipOnUpstreamChange: false,
+        suppressionFile: '', zipExtensions: ''
+    }
+}
+
+def OWASPReportCheck() {
+    stage ("OWASP Report Check") {
+        dependencyCheckPublisher canComputeNew: false, defaultEncoding: '', shouldDetectModules: true,
+        failedTotalAll: '1', failedTotalHigh: '1', failedTotalLow: '1', failedTotalNormal: '1', healthy: '', 
+        pattern: '**/dependency-check-report.xml', unHealthy: ''
+    }
+}
+
+def CheckoutProject(){
+    stage ("Checkout Git") {
+        checkout scm
+    }
+}
+
+def MVNBuild() {
+   stage ("Maven Build") {
+       //Builda a aplicacao com o profile definido
+       sh 'mvn clean install'
+    }   
+}
